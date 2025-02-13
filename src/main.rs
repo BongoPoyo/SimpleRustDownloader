@@ -1,16 +1,23 @@
 // <-----------> Importing standard libraries <----------->
 static mut CURRENT_DIRECTORY: &str = "Download/";
 // std(s)
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
-
+use std::thread;
 // use(s)
 use colored::Colorize;
 use colored::*;
+use gtk::prelude::*;
+use gtk::{
+    glib, Align, Application, ApplicationWindow, Box as GtkBox, Button, CheckButton, Orientation,
+};
+use gtk4 as gtk;
+use gtk4::cairo::ffi::STATUS_SUCCESS;
 use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
@@ -22,6 +29,7 @@ async fn get_table(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    println!("GETTING TABLE");
     println!("URL : {}", url.bold().blink()); // Print the URL
 
     let response = ureq::get(url).call()?; // send a request to the url
@@ -34,7 +42,8 @@ async fn get_table(
         download_imgs,
         scan_subfolders,
         html,
-    );
+    )
+    .await;
     // Get all tables from html
 
     Ok(None) // return None
@@ -48,6 +57,7 @@ async fn extract_table(
     scan_subfolders: char,
     html: &'static Html,
 ) {
+    println!("EXTRACTING TABLE");
     let table_selector = Selector::parse("table").unwrap(); // make table selector
     for table in html.select(&table_selector) {
         // get all tables from html
@@ -76,7 +86,8 @@ async fn extract_table(
                         download_pdfs,
                         download_imgs,
                         scan_subfolders,
-                    );
+                    )
+                    .await;
                 } // for img
             } // for href
         } // for row
@@ -92,6 +103,7 @@ async fn get_images(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    println!("GETTING IMAGEES");
     let href_attr = href.value().attr("href").unwrap();
     // get all images from row
 
@@ -103,7 +115,6 @@ async fn get_images(
 
     if let Some(alt) = img.value().attr("alt") {
         if alt == is_parent_directory || alt == is_icon {
-            return Ok(Some(String::from("IS PARENT DIR OR IS ICON SKIPPING THEM")));
         } else {
             let href_link = url.to_string() + href_attr; // Link obtained by looking inside the url
             let file_name = href_attr.split('/').last().unwrap_or("unknown");
@@ -123,6 +134,7 @@ async fn get_images(
             if alt == is_directory {
                 if scan_subfolders == 'y' || scan_subfolders == 'Y' {
                     unsafe {
+                        println!("Creating DIR");
                         fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
                             .unwrap_or_else(|why| {
                                 println!("! {:?}", why);
@@ -137,41 +149,28 @@ async fn get_images(
                             scan_subfolders,
                         ))
                         .await?; // Call get_table function with new url
-                        return Ok(Some(String::from("GET TABLE FINISHED")));
                     }
-                } else {
-                    return Ok(Some(String::from(
-                        "Was directory skipped as per user's request",
-                    )));
                 }
             } else if alt == is_image {
                 if download_imgs == 'y' || download_imgs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
-                    return Ok(Some(String::from("Downloading Image")));
                 } else {
                     println!("Found img but, didnt download");
-                    return Ok(Some(String::from(
-                        "Was image skipped as per user's request",
-                    )));
                 }
             } else if alt == is_pdf {
                 if download_pdfs == 'y' || download_pdfs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
-                    return Ok(Some(String::from("Downloading PDF")));
                 } else {
                     println!("Found pdf but, didnt download");
-                    return Ok(Some(String::from("Was PDF skipped as per user's request")));
                 }
             } else {
                 println!("{}{}", url.bright_yellow(), href_attr.bright_yellow());
-                return Ok(Some(String::from("the end")));
             }
         }
-    } else {
-        return Ok(Some(String::from("alt attribute not found in images")));
     }
+    Ok(None)
 }
 
 fn read_lines(path: &str) -> std::io::Result<Vec<String>> {
@@ -232,8 +231,64 @@ async fn download_file_from_url_with_folder(
     Ok(())
 }
 
+async fn read_urls(
+    download_pdfs: char,
+    download_imgs: char,
+    scan_subfolders: char,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        "******* Reading URLS *******".bold().underline().green()
+    );
+    // Get all the urls from the file :D and save it into a vector of type string
+    let paths: Vec<String> = read_lines("urls.txt")?; // ? does the thing only if there is no error
+
+    for path in paths {
+        let _ = get_table(
+            path.as_str(),
+            "Download/",
+            download_pdfs,
+            download_imgs,
+            scan_subfolders,
+        )
+        .await;
+    }
+    println!("READ ALL URLS");
+    return Ok(());
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        "******* PASS IN `cli` to use cli *******"
+            .bold()
+            .bright_purple()
+            .underline()
+    );
+
+    let mut args: Vec<String> = env::args().collect();
+
+    if args.len() <= 1 {
+        println!("NO COMMANDS PASSED IN");
+        args.push("gui".to_string());
+    }
+    let query = &args[1];
+    match query.as_str() {
+        "cli" => {
+            println!("RUNNING CLI")
+        }
+        _ => {
+            println!("RUNNING GUI");
+            let result = create_application().await;
+            match result {
+                glib::ExitCode::SUCCESS => {
+                    panic!("_ UI CLOSED");
+                }
+                _ => {}
+            }
+        }
+    }
     // control::set_virtual_terminal(true).unwrap();
     // crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
     println!(
@@ -277,19 +332,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("failed to readline");
     let scan_subfolders = scan_subfolders.trim().chars().next().unwrap();
 
-    // Get all the urls from the file :D and save it into a vector of type string
-    let paths: Vec<String> = read_lines("urls.txt")?; // ? does the thing only if there is no error
-
-    for path in paths {
-        let _ = get_table(
-            path.as_str(),
-            "Download/",
-            download_pdfs,
-            download_imgs,
-            scan_subfolders,
-        )
-        .await;
-    }
+    let _ = read_urls(download_pdfs, download_imgs, scan_subfolders).await;
 
     println!(
         "{}",
@@ -303,4 +346,86 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .read_line(&mut choice)
         .expect("failed to readline");
     Ok(()) // Return statement
+}
+
+async fn create_application() -> glib::ExitCode {
+    let app = Application::builder()
+        .application_id("org.example.FSS")
+        .build();
+
+    app.connect_activate(|app| {
+        // Create main window
+        let window = ApplicationWindow::builder()
+            .application(app)
+            .title("Book Downloader")
+            .default_width(300)
+            .default_height(200)
+            .build();
+
+        // Create vertical layout
+        let vbox = GtkBox::new(Orientation::Vertical, 10);
+        vbox.set_margin_top(20);
+        vbox.set_margin_bottom(20);
+        vbox.set_margin_start(20);
+        vbox.set_margin_end(20);
+
+        // Create checkboxes
+        let pdf_checkbox = CheckButton::with_label("PDF");
+        let image_checkbox = CheckButton::with_label("Image");
+        let subfolder_checkbox = CheckButton::with_label("Subfolder");
+
+        // Create Download button
+        let download_button = Button::with_label("Download");
+
+        // Handle button click event
+        let pdf_cb = pdf_checkbox.clone();
+        let image_cb = image_checkbox.clone();
+        let subfolder_cb = subfolder_checkbox.clone();
+
+        download_button.connect_clicked(move |_| {
+            let pdf_cb = pdf_cb.clone();
+            let image_cb = image_cb.clone();
+            let subfolder_cb = subfolder_cb.clone();
+
+            println!(
+                "Download options: PDF = {}, Image = {}, Subfolder = {}",
+                pdf_cb.is_active(),
+                image_cb.is_active(),
+                subfolder_cb.is_active()
+            );
+
+            let mut download_pdfs = "n".trim().chars().next().unwrap();
+            let mut download_imgs = "n".trim().chars().next().unwrap();
+            let mut scan_subfolders = "n".trim().chars().next().unwrap();
+
+            // poorest code i have ever written
+            glib::MainContext::default().spawn_local(async move {
+                if pdf_cb.is_active() {
+                    download_pdfs = "y".trim().chars().next().unwrap();
+                }
+                if image_cb.is_active() {
+                    download_imgs = "y".trim().chars().next().unwrap();
+                }
+                if subfolder_cb.is_active() {
+                    scan_subfolders = "y".trim().chars().next().unwrap();
+                }
+
+                let _ = read_urls(download_pdfs, download_imgs, scan_subfolders).await;
+            });
+        });
+
+        // Add widgets to layout
+        vbox.append(&pdf_checkbox);
+        vbox.append(&image_checkbox);
+        vbox.append(&subfolder_checkbox);
+        vbox.append(&download_button);
+
+        // Center align button
+        download_button.set_halign(Align::Center);
+        // Add layout to window
+        window.set_child(Some(&vbox));
+        window.show();
+    });
+
+    app.run()
 }
