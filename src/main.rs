@@ -18,6 +18,7 @@ use gtk::{
 };
 use gtk4 as gtk;
 use gtk4::cairo::ffi::STATUS_SUCCESS;
+use jpeg_to_pdf::JpegToPdf;
 use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
@@ -261,7 +262,7 @@ async fn read_urls(
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "{}",
-        "******* PASS IN `cli` to use cli *******"
+        "******* PASS IN `--cli` to use cli *******"
             .bold()
             .bright_purple()
             .underline()
@@ -272,10 +273,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() <= 1 {
         println!("NO COMMANDS PASSED IN");
         args.push("gui".to_string());
+        args.push("".to_string());
     }
     let query = &args[1];
     match query.as_str() {
-        "cli" => {
+        "--cli" => {
             println!("RUNNING CLI")
         }
         _ => {
@@ -289,6 +291,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+
     // control::set_virtual_terminal(true).unwrap();
     // crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
     println!(
@@ -332,7 +335,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("failed to readline");
     let scan_subfolders = scan_subfolders.trim().chars().next().unwrap();
 
-    let _ = read_urls(download_pdfs, download_imgs, scan_subfolders).await;
+    let url = &args[2];
+    match url.as_str() {
+        "" => {
+            println!("URL not passed in");
+            let _ = read_urls(download_pdfs, download_imgs, scan_subfolders);
+        }
+        _ => {
+            println!("URL: {}", url.red());
+            let _ = get_table(
+                url.as_str(),
+                "Download/",
+                download_pdfs,
+                download_imgs,
+                scan_subfolders,
+            )
+            .await;
+        }
+    }
 
     println!(
         "{}",
@@ -374,6 +394,10 @@ async fn create_application() -> glib::ExitCode {
         let image_checkbox = CheckButton::with_label("Image");
         let subfolder_checkbox = CheckButton::with_label("Subfolder");
 
+        // let url_entry = TextView::builder()
+        //     .placeholder_text("Enter URL here....")
+        //     .hexpand(true)
+        //     .build();
         // Create Download button
         let download_button = Button::with_label("Download");
 
