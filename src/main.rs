@@ -378,8 +378,8 @@ async fn create_application() -> glib::ExitCode {
         let window = ApplicationWindow::builder()
             .application(app)
             .title("Book Downloader")
-            .default_width(300)
-            .default_height(200)
+            .default_width(980)
+            .default_height(420)
             .build();
 
         // Create vertical layout
@@ -393,11 +393,13 @@ async fn create_application() -> glib::ExitCode {
         let pdf_checkbox = CheckButton::with_label("PDF");
         let image_checkbox = CheckButton::with_label("Image");
         let subfolder_checkbox = CheckButton::with_label("Subfolder");
-
-        // let url_entry = TextView::builder()
-        //     .placeholder_text("Enter URL here....")
-        //     .hexpand(true)
-        //     .build();
+        
+        let url_label = gtk4::Label::new(Some("URL:"));
+        
+        let url_entry = gtk4::Entry::new();
+        url_entry.set_placeholder_text(Some("Enter a URL..."));
+        url_entry.set_text("https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/");
+        url_entry.set_hexpand(true);
         // Create Download button
         let download_button = Button::with_label("Download");
 
@@ -405,17 +407,20 @@ async fn create_application() -> glib::ExitCode {
         let pdf_cb = pdf_checkbox.clone();
         let image_cb = image_checkbox.clone();
         let subfolder_cb = subfolder_checkbox.clone();
+        let url_entry_cb = url_entry.clone();
 
         download_button.connect_clicked(move |_| {
             let pdf_cb = pdf_cb.clone();
             let image_cb = image_cb.clone();
             let subfolder_cb = subfolder_cb.clone();
+            let url_entry_cb = url_entry_cb.clone();
 
             println!(
-                "Download options: PDF = {}, Image = {}, Subfolder = {}",
+                "Download options: PDF = {}, Image = {}, Subfolder = {}, URL = {}",
                 pdf_cb.is_active(),
                 image_cb.is_active(),
-                subfolder_cb.is_active()
+                subfolder_cb.is_active(),
+                url_entry_cb.text().to_string()
             );
 
             let mut download_pdfs = "n".trim().chars().next().unwrap();
@@ -433,17 +438,42 @@ async fn create_application() -> glib::ExitCode {
                 if subfolder_cb.is_active() {
                     scan_subfolders = "y".trim().chars().next().unwrap();
                 }
-
-                let _ = read_urls(download_pdfs, download_imgs, scan_subfolders).await;
+                let _ = get_table(
+                    &url_entry_cb.text(),
+                    "Download/",
+                    download_pdfs,
+                    download_imgs,
+                    scan_subfolders,
+                ).await;
             });
         });
 
         // Add widgets to layout
-        vbox.append(&pdf_checkbox);
-        vbox.append(&image_checkbox);
-        vbox.append(&subfolder_checkbox);
-        vbox.append(&download_button);
+        //
+        let hbox_checkboxes = GtkBox::new(Orientation::Horizontal, 10);
+        hbox_checkboxes.set_margin_top(20);
+        hbox_checkboxes.set_margin_bottom(20);
+        hbox_checkboxes.set_margin_start(20);
+        hbox_checkboxes.set_margin_end(20);
 
+        hbox_checkboxes.append(&pdf_checkbox);
+        hbox_checkboxes.append(&image_checkbox);
+        hbox_checkboxes.append(&subfolder_checkbox);
+        hbox_checkboxes.set_halign(Align::Center);
+        
+        let hbox_url = GtkBox::new(Orientation::Horizontal, 10);
+        
+        hbox_url.set_margin_top(20);
+        hbox_url.set_margin_bottom(20);
+        hbox_url.set_margin_start(20);
+        hbox_url.set_margin_end(20);
+        
+        hbox_url.append(&url_label);
+        hbox_url.append(&url_entry);
+
+        vbox.append(&hbox_url);
+        vbox.append(&hbox_checkboxes);
+        vbox.append(&download_button);
         // Center align button
         download_button.set_halign(Align::Center);
         // Add layout to window
