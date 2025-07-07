@@ -1,5 +1,6 @@
 // <-----------> Importing standard libraries <----------->
 static mut CURRENT_DIRECTORY: &str = "Download/";
+static mut jpegs: Vec<str> = vec![];
 // std(s)
 use std::env;
 use std::fs;
@@ -232,7 +233,7 @@ async fn download_file_from_url_with_folder(
     Ok(())
 }
 
-async fn read_urls(
+async fn read_urls_from_file(
     download_pdfs: char,
     download_imgs: char,
     scan_subfolders: char,
@@ -339,7 +340,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match url.as_str() {
         "" => {
             println!("URL not passed in");
-            let _ = read_urls(download_pdfs, download_imgs, scan_subfolders);
+            let _ = read_urls_from_file(download_pdfs, download_imgs, scan_subfolders);
         }
         _ => {
             println!("URL: {}", url.red());
