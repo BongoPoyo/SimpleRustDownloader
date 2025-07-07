@@ -1,5 +1,11 @@
 // <-----------> Importing standard libraries <----------->
 static mut CURRENT_DIRECTORY: &str = "Download/";
+pub static mut PdfTasks: Vec<PdfTask> = vec![];
+
+pub struct PdfTask {
+    pub converter: JpegToPdf,
+    pub output_file: File,
+}
 // std(static)
 //use std::env;
 use std::fs;
@@ -11,6 +17,7 @@ use std::path::Path;
 //use std::thread;
 // use(s)
 use colored::Colorize;
+use futures::io::BufWriter;
 //use colored::*;
 //use gtk::prelude::*;
 //use gtk::{
@@ -18,7 +25,7 @@ use colored::Colorize;
 //};
 //use gtk4 as gtk;
 //use gtk4::cairo::ffi::STATUS_SUCCESS;
-//use jpeg_to_pdf::JpegToPdf;
+use jpeg_to_pdf::JpegToPdf;
 use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
@@ -97,7 +104,23 @@ pub async fn extract_table(
         } // for row
     } // for table
       //
-    println!("JEPGS: {:?}", jpegs);
+    println!("JPEGS: {:?}", jpegs);
+    println!("FILE PATH: {}", file_path.to_string());
+    let out_file = File::create(file_path.to_string() + "out.pdf").unwrap();
+    let mut jpeg_to_pdf = JpegToPdf::new();
+
+    for jpeg in jpegs {
+        let img_data =
+            fs::read(file_path.to_string() + jpeg.as_str()).expect("Error reading img_data");
+        jpeg_to_pdf = jpeg_to_pdf.add_image(img_data);
+    }
+    unsafe {
+        let task = PdfTask {
+            converter: jpeg_to_pdf,
+            output_file: out_file,
+        };
+        PdfTasks.push(task);
+    }
 }
 
 pub async fn get_images(

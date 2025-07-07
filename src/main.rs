@@ -14,12 +14,13 @@ use std::io;
 //use std::thread;
 // use(s)
 use colored::Colorize;
+use futures::io::BufReader;
 //use colored::*;
 //use gtk::prelude::*;
 use gtk::glib;
 use gtk4 as gtk;
 //use gtk4::cairo::ffi::STATUS_SUCCESS;
-//use jpeg_to_pdf::JpegToPdf;
+use jpeg_to_pdf::JpegToPdf;
 //use reqwest::Client;
 //use scraper::ElementRef;
 //use scraper::{Html, Selector};
@@ -124,14 +125,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "{}",
-        "******* Task Completed! Press Enter to exit *******"
-            .bold()
-            .underline()
-            .red()
+        "******* Task Completed! *******".bold().underline().red()
     );
+    println!(
+        "Convert jpegs to pdf?(Enter {} for yes or {} for no):",
+        "y".bold().green(),
+        "n".bold().red()
+    );
+
     let mut choice: String = String::new();
+
     io::stdin()
         .read_line(&mut choice)
         .expect("failed to readline");
+
+    let choice = choice.as_str();
+    match choice {
+        "y" => unsafe {
+            for pdf_task in &crawler::PdfTasks {
+                pdf_task
+                    .converter
+                    .create_pdf(&mut std::io::BufWriter::new(pdf_task.output_file));
+            }
+        },
+        "n" => {}
+        _ => {
+            println!("Error reading input");
+        }
+    }
     Ok(()) // Return statement
 }
