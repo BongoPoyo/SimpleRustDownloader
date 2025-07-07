@@ -1,6 +1,5 @@
 // <-----------> Importing standard libraries <----------->
 static mut CURRENT_DIRECTORY: &str = "Download/";
-static mut jpegs: Vec<str> = vec![];
 // std(s)
 use std::env;
 use std::fs;
@@ -106,6 +105,8 @@ async fn get_images(
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
     println!("GETTING IMAGEES");
+    let mut jpegs: Vec<String> = Vec::new();
+
     let href_attr = href.value().attr("href").unwrap();
     // get all images from row
 
@@ -157,6 +158,11 @@ async fn get_images(
                 if download_imgs == 'y' || download_imgs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
+                        let file_name = href_link.split('/').last().unwrap_or("unknown");
+                        let file_type = file_name.split('.').last().unwrap_or("unknown");
+                        if file_type == "jpg" {
+                            println!("JPEG FOUND");
+                        }
                 } else {
                     println!("Found img but, didnt download");
                 }
@@ -287,8 +293,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             match result {
                 glib::ExitCode::SUCCESS => {
                     panic!("_ UI CLOSED");
+                },
+                _ => {
+                    panic!("GUI CRASHED :(");
                 }
-                _ => {}
             }
         }
     }
@@ -410,42 +418,35 @@ async fn create_application() -> glib::ExitCode {
         let subfolder_cb = subfolder_checkbox.clone();
         let url_entry_cb = url_entry.clone();
 
-        download_button.connect_clicked(move |_| {
-            let pdf_cb = pdf_cb.clone();
-            let image_cb = image_cb.clone();
-            let subfolder_cb = subfolder_cb.clone();
-            let url_entry_cb = url_entry_cb.clone();
+        download_button.connect_clicked( move |_| {
+            let download_pdfs = if pdf_cb.is_active() { 'y' } else { 'n' };
+            let download_imgs = if image_cb.is_active() { 'y' } else { 'n' };
+            let scan_subfolders = if subfolder_cb.is_active() { 'y' } else { 'n' };
+            let url : String = url_entry_cb.text().to_string();
+
+
 
             println!(
                 "Download options: PDF = {}, Image = {}, Subfolder = {}, URL = {}",
-                pdf_cb.is_active(),
-                image_cb.is_active(),
-                subfolder_cb.is_active(),
-                url_entry_cb.text().to_string()
+                download_pdfs, download_imgs, scan_subfolders, url
             );
 
-            let mut download_pdfs = "n".trim().chars().next().unwrap();
-            let mut download_imgs = "n".trim().chars().next().unwrap();
-            let mut scan_subfolders = "n".trim().chars().next().unwrap();
 
             // poorest code i have ever written
-            glib::MainContext::default().spawn_local(async move {
-                if pdf_cb.is_active() {
-                    download_pdfs = "y".trim().chars().next().unwrap();
-                }
-                if image_cb.is_active() {
-                    download_imgs = "y".trim().chars().next().unwrap();
-                }
-                if subfolder_cb.is_active() {
-                    scan_subfolders = "y".trim().chars().next().unwrap();
-                }
-                let _ = get_table(
-                    &url_entry_cb.text(),
+            //tokio::spawn(
+            glib::MainContext::default().spawn_local(
+                async move {
+
+                match get_table(
+                    &url.as_str(),
                     "Download/",
                     download_pdfs,
                     download_imgs,
                     scan_subfolders,
-                ).await;
+                ).await {
+                    Ok(_) => print!("Download Completed"),
+                    Err(e) => println!("Get Table err: {:?}", e),
+                }
             });
         });
 
