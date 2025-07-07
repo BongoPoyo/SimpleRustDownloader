@@ -1,5 +1,5 @@
 [package]
-name = "ChugtaiLibraryDownloader"
+name = "SimpleRustDownloader"
 version = "1.0.0"
 edition = "2021"
 authors = ["Taha", "Hashir"]

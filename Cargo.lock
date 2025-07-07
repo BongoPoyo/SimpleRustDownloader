@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "ChugtaiLibraryDownloader"
+name = "SimpleRustDownloader"
 version = "1.0.0"
 dependencies = [
  "colored",
