@@ -1,3 +1,5 @@
 # Rust build artifacts
 target/
 
+# Downloaded Stuff
+Download/
