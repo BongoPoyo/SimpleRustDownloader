@@ -1,11 +1,6 @@
-// <-----------> Importing standard libraries <----------->
+// <-----------> Importing standard libraries <-----------
+#![allow(static_mut_refs)]
 static mut CURRENT_DIRECTORY: &str = "Download/";
-pub static mut PdfTasks: Vec<PdfTask> = vec![];
-
-pub struct PdfTask {
-    pub converter: JpegToPdf,
-    pub output_file: File,
-}
 // std(static)
 //use std::env;
 use std::fs;
@@ -17,7 +12,6 @@ use std::path::Path;
 //use std::thread;
 // use(s)
 use colored::Colorize;
-use futures::io::BufWriter;
 //use colored::*;
 //use gtk::prelude::*;
 //use gtk::{
@@ -25,7 +19,7 @@ use futures::io::BufWriter;
 //};
 //use gtk4 as gtk;
 //use gtk4::cairo::ffi::STATUS_SUCCESS;
-use jpeg_to_pdf::JpegToPdf;
+
 use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
@@ -66,7 +60,6 @@ pub async fn extract_table(
     html: &'static Html,
 ) {
     println!("EXTRACTING TABLE");
-    let mut jpegs: Vec<String> = Vec::new();
 
     let table_selector = Selector::parse("table").unwrap(); // make table selector
     for table in html.select(&table_selector) {
@@ -83,7 +76,7 @@ pub async fn extract_table(
             for href in row.select(&href_selector) {
                 // Get all links from row
 
-                let href_attr = href.value().attr("href").unwrap(); // gets the href attribute
+                let _href_attr = href.value().attr("href").unwrap(); // gets the href attribute
 
                 let img_selector = Selector::parse("img").unwrap();
 
@@ -96,7 +89,6 @@ pub async fn extract_table(
                         download_pdfs,
                         download_imgs,
                         scan_subfolders,
-                        &mut jpegs,
                     )
                     .await;
                 } // for img
@@ -104,23 +96,6 @@ pub async fn extract_table(
         } // for row
     } // for table
       //
-    println!("JPEGS: {:?}", jpegs);
-    println!("FILE PATH: {}", file_path.to_string());
-    let out_file = File::create(file_path.to_string() + "out.pdf").unwrap();
-    let mut jpeg_to_pdf = JpegToPdf::new();
-
-    for jpeg in jpegs {
-        let img_data =
-            fs::read(file_path.to_string() + jpeg.as_str()).expect("Error reading img_data");
-        jpeg_to_pdf = jpeg_to_pdf.add_image(img_data);
-    }
-    unsafe {
-        let task = PdfTask {
-            converter: jpeg_to_pdf,
-            output_file: out_file,
-        };
-        PdfTasks.push(task);
-    }
 }
 
 pub async fn get_images(
@@ -131,7 +106,6 @@ pub async fn get_images(
     download_pdfs: char,
     download_imgs: char,
     scan_subfolders: char,
-    jpegs: &mut Vec<String>,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
     println!("GETTING IMAGEES");
 
@@ -186,14 +160,6 @@ pub async fn get_images(
                 if download_imgs == 'y' || download_imgs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
-
-                    let file_name = href_link.split('/').last().unwrap_or("unknown");
-                    let file_type = file_name.split('.').last().unwrap_or("unknown");
-
-                    if file_type == "jpg" {
-                        jpegs.push(file_name.to_string());
-                        println!("JPEG FOUND");
-                    }
                 } else {
                     println!("Found img but, didnt download");
                 }

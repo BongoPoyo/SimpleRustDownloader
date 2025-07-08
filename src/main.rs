@@ -3,6 +3,7 @@
 //static mut CURRENT_DIRECTORY: &str = "Download/";
 mod app;
 mod crawler;
+mod pdf_maker;
 // std(s)
 use std::env;
 //use std::fs;
@@ -14,13 +15,11 @@ use std::io;
 //use std::thread;
 // use(s)
 use colored::Colorize;
-use futures::io::BufReader;
 //use colored::*;
 //use gtk::prelude::*;
 use gtk::glib;
 use gtk4 as gtk;
 //use gtk4::cairo::ffi::STATUS_SUCCESS;
-use jpeg_to_pdf::JpegToPdf;
 //use reqwest::Client;
 //use scraper::ElementRef;
 //use scraper::{Html, Selector};
@@ -139,16 +138,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .read_line(&mut choice)
         .expect("failed to readline");
 
-    let choice = choice.as_str();
+    let choice = choice.trim().chars().next().unwrap();
+
     match choice {
-        "y" => unsafe {
-            for pdf_task in &crawler::PdfTasks {
-                pdf_task
-                    .converter
-                    .create_pdf(&mut std::io::BufWriter::new(pdf_task.output_file));
-            }
-        },
-        "n" => {}
+        'y' => {
+            println!("converting...");
+            let _ = pdf_maker::convert_jpegs_to_pdf();
+        }
+        'n' => {
+            println!("not converting");
+        }
         _ => {
             println!("Error reading input");
         }
