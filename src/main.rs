@@ -1,7 +1,8 @@
 // <-----------> Importing standard libraries <----------->
 
 //static mut CURRENT_DIRECTORY: &str = "Download/";
-mod app;
+//mod app; // deprecated
+mod app_iced;
 mod crawler;
 mod pdf_maker;
 // std(s)
@@ -17,8 +18,8 @@ use std::io;
 use colored::Colorize;
 //use colored::*;
 //use gtk::prelude::*;
-use gtk::glib;
-use gtk4 as gtk;
+//use gtk::glib;
+//use gtk4 as gtk;
 //use gtk4::cairo::ffi::STATUS_SUCCESS;
 //use reqwest::Client;
 //use scraper::ElementRef;
@@ -48,15 +49,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         _ => {
             println!("RUNNING GUI");
-            let result = app::create_application().await;
+            let result = app_iced::create_application();
             match result {
-                glib::ExitCode::SUCCESS => {
-                    panic!("_ UI CLOSED");
-                }
                 _ => {
-                    panic!("GUI CRASHED :(");
+                    panic!("GUI CRASHED :( try using cli");
                 }
             }
+
+            //let result = app::create_application().await;
+            //match result {
+            //    glib::ExitCode::SUCCESS => {
+            //        panic!("_ UI CLOSED");
+            //    }
+            //    _ => {
+            //        panic!("GUI CRASHED :(");
+            //    }
+            //}
         }
     }
 
