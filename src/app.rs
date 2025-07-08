@@ -64,7 +64,7 @@ pub async fn create_application() -> glib::ExitCode {
         let subfolder_cb = subfolder_checkbox.clone();
         let url_entry_cb = url_entry.clone();
 
-        download_button.connect_clicked( move |_| {
+        download_button.connect_clicked(move |_| {
             let download_pdfs = if pdf_cb.is_active() { 'y' } else { 'n' };
             let download_imgs = if image_cb.is_active() { 'y' } else { 'n' };
             let scan_subfolders = if subfolder_cb.is_active() { 'y' } else { 'n' };
@@ -79,7 +79,8 @@ pub async fn create_application() -> glib::ExitCode {
 
 
             // poorest code i have ever written
-            //tokio::spawn(
+            //std::thread::spawn(
+                
             glib::MainContext::default().spawn_local(
                 async move {
 
@@ -131,3 +132,5 @@ pub async fn create_application() -> glib::ExitCode {
 
     app.run()
 }
+
+
