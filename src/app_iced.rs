@@ -80,11 +80,13 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
         }
         Message::ConvertToPdfPressed => {
             thread::spawn(move || {
-                println!("CONVERT BTN PRESSED...");
+                println!("[APP-ICED] CONVERT BTN PRESSED...");
                 let _ = pdf_maker::convert_jpegs_to_pdf();
-            });
+            })
+            .join()
+            .unwrap();
 
-            println!("PDF COMPRESSED");
+            println!("[APP-ICED] PDF COMPRESSED");
             Task::none()
         }
         Message::DownloadFinished(_string) => {
@@ -147,7 +149,11 @@ async fn download(
             )
             .await;
         });
-    });
+
+        println!("[APP-ICED] THE END");
+    })
+    .join()
+    .unwrap();
 
     String::from("Hehe")
 }

@@ -38,17 +38,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<String> = env::args().collect();
 
     if args.len() <= 1 {
-        println!("NO COMMANDS PASSED IN");
+        println!("[Main] NO COMMANDS PASSED IN");
         args.push("gui".to_string());
         args.push("".to_string());
     }
     let query = &args[1];
     match query.as_str() {
         "--cli" => {
-            println!("RUNNING CLI")
+            println!("[Main] RUNNING CLI")
         }
         _ => {
-            println!("RUNNING GUI");
+            println!("[Main] RUNNING GUI");
             let result = app_iced::create_application();
             match result {
                 _ => {
@@ -114,11 +114,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = &args[2];
     match url.as_str() {
         "" => {
-            println!("URL not passed in");
+            println!("[Main] URL not passed in");
             let _ = crawler::read_urls_from_file(download_pdfs, download_imgs, scan_subfolders);
         }
         _ => {
-            println!("URL: {}", url.red());
+            println!("[Main] URL: {}", url.red());
             let _ = crawler::get_table(
                 url.as_str(),
                 "Download/",
@@ -150,14 +150,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match choice {
         'y' => {
-            println!("converting...");
+            println!("[Main] converting...");
             let _ = pdf_maker::convert_jpegs_to_pdf();
         }
         'n' => {
-            println!("not converting");
+            println!("[Main] not converting");
         }
         _ => {
-            println!("Error reading input");
+            println!("[Main] Error reading input");
         }
     }
     Ok(()) // Return statement
