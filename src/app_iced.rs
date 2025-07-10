@@ -158,6 +158,8 @@ async fn download(
     //        }
     //    });
     //});
+    //
+
     // WORKING CODE BUT DOESNT SUPPORT CANCELLATION
 
     thread::spawn(move || {
