@@ -1,7 +1,10 @@
 #![allow(unused_imports)]
+
 use crate::crawler;
 use crate::pdf_maker;
 use iced::widget::{button, checkbox, column, row, text, text_input};
+use iced::Task;
+use iced::Theme;
 use iced::{executor, Alignment, Element, Settings};
 use std::thread;
 use tokio::runtime::Runtime;
@@ -23,6 +26,7 @@ enum Message {
     ImgToggle(bool),
     SubfolderToggle(bool),
     DownloadPressed,
+    DownloadFinished(String),
     ConvertToPdfPressed,
 }
 
@@ -39,64 +43,55 @@ impl Default for State {
 }
 
 pub fn create_application() -> iced::Result {
-    iced::run("Downloader App", update, view)
+    iced::application("Downloader App", update, view)
+        .theme(theme)
+        .run()
 }
 
-fn update(state: &mut State, message: Message) {
-    if !state.is_downloading {
-        match message {
-            Message::UrlChanged(new_url) => state.url = new_url,
-            Message::PdfToggle(v) => state.download_pdfs = v,
-            Message::ImgToggle(v) => state.download_imgs = v,
-            Message::SubfolderToggle(v) => state.scan_subfolders = v,
-            Message::DownloadPressed => {
-                let url = state.url.clone();
-                let download_pdfs = if state.download_pdfs { 'y' } else { 'n' };
-                let download_imgs = if state.download_imgs { 'y' } else { 'n' };
-                let scan_subfolders = if state.scan_subfolders { 'y' } else { 'n' };
-                state.is_downloading = true;
-                thread::spawn(move || {
-                    // Create a new Tokio runtime for this thread
-                    let rt = Runtime::new().unwrap();
-                    rt.block_on(async move {
-                        let result = crawler::get_table(
-                            &url.as_str(),
-                            "Download/",
-                            download_pdfs,
-                            download_imgs,
-                            scan_subfolders,
-                        )
-                        .await;
-
-                        match result {
-                            Ok(_) => {
-                                println!("Download Completed");
-                                //state.downloaded = true;
-                            }
-                            Err(e) => {
-                                println!("Exited with error {}", e);
-                            }
-                        }
-                    });
-                })
-                .join()
-                .expect("Error joining thread");
-                println!("Thread joined :>");
-                state.is_downloading = false
-            }
-            Message::ConvertToPdfPressed => {
-                thread::spawn(move || {
-                    println!("CONVERT BTN PRESSED...");
-                    let _ = pdf_maker::convert_jpegs_to_pdf();
-                })
-                .join()
-                .expect("ERROR JOINING PDF THREAD");
-
-                println!("PDF COMPRESSED");
-            }
+fn update(state: &mut State, message: Message) -> Task<Message> {
+    match message {
+        Message::UrlChanged(new_url) => {
+            state.url = new_url;
+            Task::none()
         }
-    } else {
-        println!("Wait is downloading");
+        Message::PdfToggle(v) => {
+            state.download_pdfs = v;
+            Task::none()
+        }
+        Message::ImgToggle(v) => {
+            state.download_imgs = v;
+            Task::none()
+        }
+        Message::SubfolderToggle(v) => {
+            state.scan_subfolders = v;
+            Task::none()
+        }
+        Message::DownloadPressed => {
+            state.is_downloading = true;
+            let url = state.url.clone();
+            let download_pdfs = if state.download_pdfs { 'y' } else { 'n' };
+            let download_imgs = if state.download_imgs { 'y' } else { 'n' };
+            let scan_subfolders = if state.scan_subfolders { 'y' } else { 'n' };
+
+            Task::perform(
+                download(url, download_pdfs, download_imgs, scan_subfolders),
+                Message::DownloadFinished,
+            )
+        }
+        Message::ConvertToPdfPressed => {
+            thread::spawn(move || {
+                println!("CONVERT BTN PRESSED...");
+                let _ = pdf_maker::convert_jpegs_to_pdf();
+            });
+
+            println!("PDF COMPRESSED");
+            Task::none()
+        }
+        Message::DownloadFinished(_string) => {
+            state.is_downloading = false;
+
+            Task::none()
+        }
     }
 }
 
@@ -127,4 +122,32 @@ fn view(state: &State) -> Element<Message> {
     .padding(20)
     .align_x(Alignment::Start)
     .into()
+}
+
+fn theme(_state: &State) -> Theme {
+    Theme::TokyoNight
+}
+
+async fn download(
+    url: String,
+    download_pdfs: char,
+    download_imgs: char,
+    scan_subfolders: char,
+) -> String {
+    thread::spawn(move || {
+        // Create a new Tokio runtime for this thread
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async move {
+            let _ = crawler::get_table(
+                &url.as_str(),
+                "Download/",
+                download_pdfs,
+                download_imgs,
+                scan_subfolders,
+            )
+            .await;
+        });
+    });
+
+    String::from("Hehe")
 }
