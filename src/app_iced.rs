@@ -1,11 +1,9 @@
-#![allow(unused_imports)]
-
 use crate::crawler;
 use crate::pdf_maker;
 use iced::widget::{button, checkbox, column, row, text, text_input};
 use iced::Task;
 use iced::Theme;
-use iced::{executor, Alignment, Element, Settings};
+use iced::{Alignment, Element};
 use std::thread;
 use tokio::runtime::Runtime;
 
@@ -136,8 +134,33 @@ async fn download(
     download_imgs: char,
     scan_subfolders: char,
 ) -> String {
+    //let (ah, ar) = AbortHandle::new_pair();
+
+    //let abortable = Abortable::new(
+    //    crawler::get_table(
+    //        &url.as_str(),
+    //        "Download/",
+    //        download_pdfs,
+    //        download_imgs,
+    //        scan_subfolders,
+    //    ),
+    //    ar,
+    //);
+
+    //let ah_arc = Arc::new(Mutex::new(Some(ah.clone())));
+
+    //std::thread::spawn(move || {
+    //    let rt = Runtime::new().unwrap();
+    //    let result = rt.block_on(async move {
+    //        match abortable.await {
+    //            Ok(_) => println!("[AppIced] download finished"),
+    //            Err(_) => println!("[AppIced] Download CANCELLATION"),
+    //        }
+    //    });
+    //});
+    // WORKING CODE BUT DOESNT SUPPORT CANCELLATION
+
     thread::spawn(move || {
-        // Create a new Tokio runtime for this thread
         let rt = Runtime::new().unwrap();
         rt.block_on(async move {
             let _ = crawler::get_table(
