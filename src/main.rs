@@ -178,7 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn enable_ansi_support() {
     println!("[Main] Detected Windows.... Enabling ANSI SUPPORT for colors...");
     control::set_virtual_terminal(true).unwrap();
-    crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
+    // crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
 }
 
 #[cfg(not(windows))]
