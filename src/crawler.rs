@@ -134,15 +134,10 @@ pub async fn get_images(
             // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
             let href_link = url.to_string() + href_attr; // Link obtained by looking inside the url
             let file_name = href_attr.split('/').last().unwrap_or("unknown");
-            let folder: String = file_path.to_string()
-                + (href_attr
-                    .split('/')
-                    .take(2)
-                    .collect::<Vec<&str>>()
-                    .join("/"))
-                .as_str();
+            let folder: String =
+                file_path.to_string() + (url.strip_prefix("https://").unwrap_or(url));
             let folder_to_download = folder.replace(file_name, "");
-
+            // logln!("url:{} href_attr:{} href_link:{} file_name:{} folder:{} path:{}", url.bright_green(), href_attr.bright_green(), href_link.bright_green(), file_name.bright_green(), folder.bright_green(), file_path.bright_green());
             println!(
                 "{} Link: {}",
                 "[Crawler]".bold().red(),
@@ -155,15 +150,18 @@ pub async fn get_images(
                 if scan_subfolders == 'y' || scan_subfolders == 'Y' {
                     unsafe {
                         println!("{} Creating DIR", "[Crawler]".bold().red());
-                        fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
-                            .unwrap_or_else(|why| {
-                                println!("{} ! {:?}", "[Crawler]".bold().red(), why);
-                            });
+
+                        // OLD CODE NEEDED IT, NOW THE NEW ONE DOESNT
+                        //
+                        //fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
+                        //    .unwrap_or_else(|why| {
+                        //        println!("{} ! {:?}", "[Crawler]".bold().red(), why);
+                        //    });
 
                         // Bcz it can get infinitelty long so we use box::pin
                         Box::pin(get_table(
                             (url.to_string() + href_attr).as_str(),
-                            folder.as_str(),
+                            "Download/",
                             download_pdfs,
                             download_imgs,
                             scan_subfolders,
