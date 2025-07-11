@@ -11,9 +11,8 @@ use std::io::BufReader;
 use std::path::Path;
 //use std::thread;
 // use(s)
-use colored::control;
+//
 use colored::Colorize;
-//use colored::*;
 //use gtk::prelude::*;
 //use gtk::{
 //    glib, Align, Application, ApplicationWindow, Box as GtkBox, Button, CheckButton, Orientation,

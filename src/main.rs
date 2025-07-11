@@ -16,6 +16,11 @@ use std::io;
 //use std::thread;
 // use(s)
 use colored::Colorize;
+#[cfg(windows)]
+use colored::control;
+#[cfg(windows)]
+use crossterm;
+
 //use colored::*;
 //use gtk::prelude::*;
 //use gtk::glib;
