@@ -31,8 +31,8 @@ pub async fn get_table(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    println!("[Crawler] GETTING TABLE");
-    println!("[Crawler] URL : {}", url.bold().blink()); // Print the URL
+    println!("{} GETTING TABLE", "[Crawler]".bold().red());
+    println!("{} URL : {}", "[Crawler]".bold().red(), url.bold().blink()); // Print the URL
 
     let response = ureq::get(url).call()?; // send a request to the url
                                            // let html: Html = Html::parse_document(&response.into_string()?); // parse the html from the response
@@ -59,7 +59,7 @@ pub async fn extract_table(
     scan_subfolders: char,
     html: &'static Html,
 ) {
-    println!("[Crawler] EXTRACTING TABLE");
+    println!("{} EXTRACTING TABLE", "[Crawler]".bold().red());
 
     let table_selector = Selector::parse("table").unwrap(); // make table selector
     for table in html.select(&table_selector) {
@@ -107,7 +107,7 @@ pub async fn get_images(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    println!("[Crawler] GETTING IMAGEES");
+    println!("{} GETTING IMAGEES", "[Crawler]".bold().red());
 
     let href_attr = href.value().attr("href").unwrap();
     // get all images from row
@@ -132,17 +132,21 @@ pub async fn get_images(
                 .as_str();
             let folder_to_download = folder.replace(file_name, "");
 
-            println!("[Crawler] Link: {}", href_link.bright_green().bold());
+            println!(
+                "{} Link: {}",
+                "[Crawler]".bold().red(),
+                href_link.bright_green().bold()
+            );
 
             let href_attr = href.value().attr("href").unwrap();
             // else was here
             if alt == is_directory {
                 if scan_subfolders == 'y' || scan_subfolders == 'Y' {
                     unsafe {
-                        println!("[Crawler] Creating DIR");
+                        println!("{} Creating DIR", "[Crawler]".bold().red());
                         fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
                             .unwrap_or_else(|why| {
-                                println!("[Crawler] ! {:?}", why);
+                                println!("{} ! {:?}", "[Crawler]".bold().red(), why);
                             });
 
                         // Bcz it can get infinitelty long so we use box::pin
@@ -161,18 +165,19 @@ pub async fn get_images(
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
                 } else {
-                    println!("[Crawler] Found img but, didnt download");
+                    println!("{} Found img but, didnt download", "[Crawler]".bold().red());
                 }
             } else if alt == is_pdf {
                 if download_pdfs == 'y' || download_pdfs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
                 } else {
-                    println!("[Crawler] Found pdf but, didnt download");
+                    println!("{} Found pdf but, didnt download", "[Crawler]".bold().red());
                 }
             } else {
                 println!(
-                    "[Crawler] {}{}",
+                    "{} {}{}",
+                    "[Crawler]".bold().red(),
                     url.bright_yellow(),
                     href_attr.bright_yellow()
                 );
@@ -197,7 +202,7 @@ pub fn read_lines(path: &str) -> std::io::Result<Vec<String>> {
 pub fn create_directory_if_it_does_not_exist(directory_path: &str) {
     if !fs::metadata(directory_path).is_ok() {
         fs::create_dir_all(directory_path).unwrap_or_else(|why| {
-            println!("[Crawler] ! {:?}", why);
+            println!("{} ! {:?}", "[Crawler]".bold().red(), why);
         });
     }
 }
@@ -221,7 +226,8 @@ pub async fn download_file_from_url_with_folder(
     let mb = bytes.len() / (1024 * 1024);
 
     println!(
-        "{} {} | {} {} | {} {} MB | Path {}",
+        "{} {} {} | {} {} | {} {} MB | Path {}",
+        "[Crawler]".bold().red(),
         //  Headings in bold     variables with colors
         "File Type:".red().underline(),
         file_type.bold().bright_purple(),
@@ -233,7 +239,8 @@ pub async fn download_file_from_url_with_folder(
     );
 
     println!(
-        "[Crawler] {} | {}",
+        "{} {} | {}",
+        "[Crawler]".bold().red(),
         "Downloading at".underline().bold(),
         path
     );
@@ -251,7 +258,8 @@ pub async fn read_urls_from_file(
     scan_subfolders: char,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!(
-        "{}",
+        "{} {}",
+        "[Crawler]".bold().red(),
         "******* Reading URLS *******".bold().underline().green()
     );
     // Get all the urls from the file :D and save it into a vector of type string
@@ -267,6 +275,6 @@ pub async fn read_urls_from_file(
         )
         .await;
     }
-    println!("[Crawler] READ ALL URLS");
+    println!("{} READ ALL URLS", "[Crawler]".bold().red());
     return Ok(());
 }

@@ -1,10 +1,9 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
-#![allow(static_mut_refs)]
-static DOWNLOAD_THREAD_HANDLE: OnceCell<JoinHandle<()>> = OnceCell::new();
+//#![allow(unused_imports)]
+//#![allow(dead_code)]
+//#![allow(static_mut_refs)]
+//static DOWNLOAD_THREAD_HANDLE: OnceCell<JoinHandle<()>> = OnceCell::new();
 
-static DOWNLOAD_THREAD: Lazy<Mutex<Option<JoinHandle<()>>>> = Lazy::new(|| Mutex::new(None));
-use std::sync::Mutex;
+//static DOWNLOAD_THREAD: Lazy<Mutex<Option<JoinHandle<()>>>> = Lazy::new(|| Mutex::new(None));
 
 use crate::crawler;
 use crate::pdf_maker;
@@ -12,11 +11,10 @@ use iced::widget::{button, checkbox, column, row, text, text_input};
 use iced::Task;
 use iced::Theme;
 use iced::{Alignment, Element};
-use once_cell::sync::{Lazy, OnceCell};
-use std::thread::{self, JoinHandle};
-use stop_thread;
+use std::thread::{self};
 use tokio::runtime::Runtime;
 
+use colored::Colorize;
 #[derive(Debug, Clone)]
 struct State {
     url: String,
@@ -89,13 +87,13 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
         }
         Message::ConvertToPdfPressed => {
             thread::spawn(move || {
-                println!("[APP-ICED] CONVERT BTN PRESSED...");
+                println!("{} CONVERT BTN PRESSED...", "[AppIced]".blue().bold());
                 let _ = pdf_maker::convert_jpegs_to_pdf();
             })
             .join()
             .unwrap();
 
-            println!("[APP-ICED] PDF COMPRESSED");
+            println!("{} PDF COMPRESSED", "[AppIced]".blue().bold());
             Task::none()
         }
         Message::DownloadFinished(_string) => {
@@ -104,11 +102,11 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::CancelDownload => {
-            if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
-                handle.join().unwrap();
-            } else {
-                println!("[AppIced] No thread to join.");
-            }
+            //if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
+            //    handle.join().unwrap();
+            //} else {
+            //    println!("{} No thread to join.", "[AppIced]".blue().bold());
+            //}
             Task::none()
         }
     }
@@ -116,7 +114,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 
 fn view(state: &State) -> Element<Message> {
     let mut download_button = button("Download").on_press(Message::DownloadPressed);
-    let mut cancel_button = button("Cancel Download").on_press(Message::CancelDownload);
+    // let mut cancel_button = button("Cancel Download").on_press(Message::CancelDownload);
     let mut convert_pdf_button =
         button("Convert Img to PDF").on_press(Message::ConvertToPdfPressed);
 
@@ -136,7 +134,7 @@ fn view(state: &State) -> Element<Message> {
             checkbox("Scan Subfolders", state.scan_subfolders).on_toggle(Message::SubfolderToggle)
         ]
         .spacing(20),
-        row![download_button, convert_pdf_button, cancel_button,].spacing(30)
+        row![download_button, convert_pdf_button,].spacing(30)
     ]
     .spacing(15)
     .padding(20)
@@ -181,7 +179,7 @@ async fn download(
     //
 
     // WORKING CODE BUT DOESNT SUPPORT CANCELLATION
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         let rt = Runtime::new().unwrap();
         rt.block_on(async move {
             let _ = crawler::get_table(
@@ -194,16 +192,20 @@ async fn download(
             .await;
         });
 
-        println!("[APP-ICED] THE END");
-    });
+        println!("{} End Of download thread", "[AppIced]".blue().bold());
+    })
+    .join()
+    .unwrap();
 
-    DOWNLOAD_THREAD_HANDLE.set(handle).unwrap();
-    //*DOWNLOAD_THREAD.lock().unwrap() = Some(handle);
-
-    if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
-        handle.join().unwrap();
-    } else {
-        println!("[AppIced] No thread to join.");
-    }
+    //
+    // DOWNLOAD_THREAD_HANDLE.set(handle).unwrap();
+    // //*DOWNLOAD_THREAD.lock().unwrap() = Some(handle);
+    //
+    // if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
+    //     println!("[AppIced] Waiting for thread to join.");
+    //     handle.join().unwrap();
+    // } else {
+    //     println!("[AppIced] No thread to join.");
+    // }
     String::from("Hehe")
 }

@@ -27,8 +27,10 @@ use colored::Colorize;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    enable_ansi_support();
     println!(
-        "{}",
+        "{} {}",
+        "[Main]".bold().green(),
         "******* PASS IN `--cli` to use cli *******"
             .bold()
             .bright_purple()
@@ -38,21 +40,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<String> = env::args().collect();
 
     if args.len() <= 1 {
-        println!("[Main] NO COMMANDS PASSED IN");
+        println!("[{}] NO COMMANDS PASSED IN", "Main".green().bold());
         args.push("gui".to_string());
         args.push("".to_string());
     }
     let query = &args[1];
     match query.as_str() {
         "--cli" => {
-            println!("[Main] RUNNING CLI")
+            println!("[{}] RUNNING CLI", "Main".green().bold())
         }
         _ => {
-            println!("[Main] RUNNING GUI");
-            let result = app_iced::create_application();
+            println!("[{}] RUNNING GUI", "Main".green().bold());
+            let result: iced::Result = app_iced::create_application();
             match result {
-                _ => {
-                    panic!("GUI CRASHED :( try using cli");
+                Ok(()) => {
+                    println!("[{}] GUI exited without any error.", "Main".green().bold());
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    panic!("[{}] GUI exited with error: {}", "Main".green().bold(), e);
                 }
             }
 
@@ -114,11 +120,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = &args[2];
     match url.as_str() {
         "" => {
-            println!("[Main] URL not passed in");
+            println!("[{}] URL not passed in", "Main".green().bold());
             let _ = crawler::read_urls_from_file(download_pdfs, download_imgs, scan_subfolders);
         }
         _ => {
-            println!("[Main] URL: {}", url.red());
+            println!("[{}] URL: {}", "Main".green().bold(), url.red());
             let _ = crawler::get_table(
                 url.as_str(),
                 "Download/",
@@ -150,15 +156,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match choice {
         'y' => {
-            println!("[Main] converting...");
+            println!("[{}] converting...", "Main".green().bold());
             let _ = pdf_maker::convert_jpegs_to_pdf();
         }
         'n' => {
-            println!("[Main] not converting");
+            println!("[{}] not converting", "Main".green().bold());
         }
         _ => {
-            println!("[Main] Error reading input");
+            println!("[{}] Error reading input", "Main".green().bold());
         }
     }
     Ok(()) // Return statement
+}
+
+#[cfg(windows)]
+fn enable_ansi_support() {
+    println!("[Main] Detected Windows.... Enabling ANSI SUPPORT for colors...");
+    control::set_virtual_terminal(true).unwrap();
+    crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
+}
+
+#[cfg(not(windows))]
+fn enable_ansi_support() {
+    println!("[{}] Detected UNIX BASED OS....", "Main".green().bold());
 }
