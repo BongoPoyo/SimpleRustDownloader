@@ -217,6 +217,8 @@ pub async fn download_file_from_url_with_folder(
     let response = client.get(url).send().await?;
     let bytes = response.bytes().await?;
 
+    // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
+    //
     let file_name = url.split('/').last().unwrap_or("unknown");
 
     let file_type = file_name.split('.').last().unwrap_or("unknown");
