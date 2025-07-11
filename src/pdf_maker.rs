@@ -4,7 +4,6 @@ use std::fs::{self, DirEntry, File};
 use std::io;
 use std::path::Path; //, PathBuf};
 
-#[macro_export]
 macro_rules! logln {
     ($($arg:tt)*) => {
         println!(

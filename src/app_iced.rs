@@ -14,6 +14,16 @@ use iced::{Alignment, Element};
 use std::thread::{self};
 use tokio::runtime::Runtime;
 
+
+macro_rules! logln {
+    ($($arg:tt)*) => {
+        println!(
+            "{} {}",
+            "[AppIced]".bold().blue(),
+            format!($($arg)*)
+        );
+    };
+}
 use colored::Colorize;
 #[derive(Debug, Clone)]
 struct State {

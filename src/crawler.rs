@@ -24,6 +24,16 @@ use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
 
+macro_rules! logln {
+    ($($arg:tt)*) => {
+        println!(
+            "{} {}",
+            "[Crawler]".bold().red(),
+            format!($($arg)*)
+        );
+    };
+}
+
 pub async fn get_table(
     url: &str,
     file_path: &str,
@@ -121,6 +131,7 @@ pub async fn get_images(
     if let Some(alt) = img.value().attr("alt") {
         if alt == is_parent_directory || alt == is_icon {
         } else {
+            // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
             let href_link = url.to_string() + href_attr; // Link obtained by looking inside the url
             let file_name = href_attr.split('/').last().unwrap_or("unknown");
             let folder: String = file_path.to_string()
