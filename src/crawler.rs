@@ -117,6 +117,15 @@ pub async fn get_images(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    // if url doenst end with / add a /
+    // causes issues if not done like this
+    let mut url = url.to_string();
+
+    if !url.ends_with('/') {
+        url.push('/');
+    }
+
+    let url = url.as_str();
     println!("{} GETTING IMAGEES", "[Crawler]".bold().red());
 
     let href_attr = href.value().attr("href").unwrap();
