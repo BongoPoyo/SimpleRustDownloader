@@ -24,6 +24,9 @@ use reqwest::Client;
 use scraper::ElementRef;
 use scraper::{Html, Selector};
 
+use crate::DISPLAY_DEBUG_INFO;
+use crate::OVERRIDE_EXISTING_FILES;
+
 macro_rules! logln {
     ($($arg:tt)*) => {
         println!(
@@ -229,46 +232,92 @@ pub async fn download_file_from_url_with_folder(
     url: &str,
     input_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    create_directory_if_it_does_not_exist(input_path);
+    unsafe {
+        create_directory_if_it_does_not_exist(input_path);
+        let file_name = url.split('/').last().unwrap_or("unknown");
 
-    let client = Client::new();
-    let response = client.get(url).send().await?;
-    let bytes = response.bytes().await?;
+        let file_type = file_name.split('.').last().unwrap_or("unknown");
 
-    // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
-    //
-    let file_name = url.split('/').last().unwrap_or("unknown");
+        let path = input_path.to_string() + file_name;
+        let file_path = Path::new(&path); // added &
 
-    let file_type = file_name.split('.').last().unwrap_or("unknown");
+        if file_path.exists() {
+            if DISPLAY_DEBUG_INFO {
+                logln!("{} already exists", path);
+            }
 
-    let path = input_path.to_string() + file_name;
+            if OVERRIDE_EXISTING_FILES {
+                logln!("{} ovverinding file", path);
+                // SEND REQUEST TO GET THE FILE
+                let client = Client::new();
+                let response = client.get(url).send().await?;
+                let bytes = response.bytes().await?;
 
-    let mb = bytes.len() / (1024 * 1024);
+                // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
+                //
 
-    println!(
-        "{} {} {} | {} {} | {} {} MB | Path {}",
-        "[Crawler]".bold().red(),
-        //  Headings in bold     variables with colors
-        "File Type:".red().underline(),
-        file_type.bold().bright_purple(),
-        "File Name:".green().underline(),
-        file_name.bold().bright_yellow(),
-        "File Size:".blue().underline(),
-        mb.to_string().bold().bright_cyan(),
-        path.magenta()
-    );
+                let mb = bytes.len() / (1024 * 1024);
 
-    println!(
-        "{} {} | {}",
-        "[Crawler]".bold().red(),
-        "Downloading at".underline().bold(),
-        path
-    );
+                if DISPLAY_DEBUG_INFO {
+                    println!(
+                        "{} {} {} | {} {} | {} {} MB | Path {}",
+                        "[Crawler]".bold().red(),
+                        //  Headings in bold     variables with colors
+                        "File Type:".red().underline(),
+                        file_type.bold().bright_purple(),
+                        "File Name:".green().underline(),
+                        file_name.bold().bright_yellow(),
+                        "File Size:".blue().underline(),
+                        mb.to_string().bold().bright_cyan(),
+                        path.magenta()
+                    );
+                }
+                println!(
+                    "{} {} | {}",
+                    "[Crawler]".bold().red(),
+                    "Downloading at".underline().bold(),
+                    path
+                );
 
-    let file_path = Path::new(&path); // added &
-    let mut file = File::create(file_path)?;
-    file.write_all(&bytes)?;
+                let mut file = File::create(file_path)?;
+                file.write_all(&bytes)?;
+            }
+        } else {
+            // SEND REQUEST TO GET THE FILE
+            let client = Client::new();
+            let response = client.get(url).send().await?;
+            let bytes = response.bytes().await?;
 
+            // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
+            //
+
+            let mb = bytes.len() / (1024 * 1024);
+
+            if DISPLAY_DEBUG_INFO {
+                println!(
+                    "{} {} {} | {} {} | {} {} MB | Path {}",
+                    "[Crawler]".bold().red(),
+                    //  Headings in bold     variables with colors
+                    "File Type:".red().underline(),
+                    file_type.bold().bright_purple(),
+                    "File Name:".green().underline(),
+                    file_name.bold().bright_yellow(),
+                    "File Size:".blue().underline(),
+                    mb.to_string().bold().bright_cyan(),
+                    path.magenta()
+                );
+            }
+            println!(
+                "{} {} | {}",
+                "[Crawler]".bold().red(),
+                "Downloading at".underline().bold(),
+                path
+            );
+
+            let mut file = File::create(file_path)?;
+            file.write_all(&bytes)?;
+        }
+    }
     Ok(())
 }
 

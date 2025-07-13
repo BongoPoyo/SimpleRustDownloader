@@ -1,5 +1,7 @@
 // <-----------> Importing standard libraries <----------->
 
+static mut DISPLAY_DEBUG_INFO: bool = false;
+static mut OVERRIDE_EXISTING_FILES: bool = false;
 //static mut CURRENT_DIRECTORY: &str = "Download/";
 //mod app; // deprecated
 mod app_iced;
@@ -15,9 +17,9 @@ use std::io;
 //use std::path::Path;
 //use std::thread;
 // use(s)
-use colored::Colorize;
 #[cfg(windows)]
 use colored::control;
+use colored::Colorize;
 #[cfg(windows)]
 use crossterm;
 
@@ -29,7 +31,15 @@ use crossterm;
 //use reqwest::Client;
 //use scraper::ElementRef;
 //use scraper::{Html, Selector};
-
+macro_rules! logln {
+    ($($arg:tt)*) => {
+        println!(
+            "{} {}",
+            "[Main]".bold().green(),
+            format!($($arg)*)
+        );
+    };
+}
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_ansi_support();
@@ -44,39 +54,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut args: Vec<String> = env::args().collect();
 
+    // COMMAND LINE ARGS
     if args.len() <= 1 {
         println!("[{}] NO COMMANDS PASSED IN", "Main".green().bold());
-        args.push("gui".to_string());
+        args.push("--gui".to_string());
         args.push("".to_string());
     }
-    let query = &args[1];
-    match query.as_str() {
-        "--cli" => {
-            println!("[{}] RUNNING CLI", "Main".green().bold())
-        }
-        _ => {
-            println!("[{}] RUNNING GUI", "Main".green().bold());
-            let result: iced::Result = app_iced::create_application();
-            match result {
-                Ok(()) => {
-                    println!("[{}] GUI exited without any error.", "Main".green().bold());
-                    std::process::exit(0);
-                }
-                Err(e) => {
-                    panic!("[{}] GUI exited with error: {}", "Main".green().bold(), e);
-                }
-            }
 
-            //let result = app::create_application().await;
-            //match result {
-            //    glib::ExitCode::SUCCESS => {
-            //        panic!("_ UI CLOSED");
-            //    }
-            //    _ => {
-            //        panic!("GUI CRASHED :(");
-            //    }
-            //}
+    if args.contains(&"--cli".to_string()) || args.contains(&"-c".to_string()) {
+        logln!("Running cli");
+    } else if args.contains(&"--gui".to_string()) || args.contains(&"-g".to_string()) {
+        logln!("Running gui");
+        let result: iced::Result = app_iced::create_application();
+        match result {
+            Ok(()) => {
+                println!("[{}] GUI exited without any error.", "Main".green().bold());
+                std::process::exit(0);
+            }
+            Err(e) => {
+                panic!("[{}] GUI exited with error: {}", "Main".green().bold(), e);
+            }
         }
+    }
+    if args.contains(&"--debug".to_string()) || args.contains(&"-d".to_string()) {
+        logln!("Enabling debug mode....");
+        unsafe {
+            DISPLAY_DEBUG_INFO = true;
+        }
+    }
+    if args.contains(&"--ovveride".to_string()) || args.contains(&"-o".to_string()) {
+        logln!("Will override existing files...");
+        unsafe {
+            OVERRIDE_EXISTING_FILES = true;
+        }
+    }
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        logln!(
+            "--help used:
+            --cli or -c                     Runs cli
+            --gui or -g                     Runs gui(Default: Runs gui instead of cli.) 
+            --help or -h                    Shows this help form
+            --url <url> or -u <url>         Used to set the url
+            --debug or -d                   Displays debug info
+            --overrride or -o               Overrides the pre-existing files with the new one (Default: Skips re-downloading the pre-existing files.)
+            -----------------------------------------------------------------------------------------------------------------------------------------"
+        );
     }
 
     // control::set_virtual_terminal(true).unwrap();
@@ -122,14 +144,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("failed to readline");
     let scan_subfolders = scan_subfolders.trim().chars().next().unwrap();
 
-    let url = &args[2];
-    match url.as_str() {
-        "" => {
-            println!("[{}] URL not passed in", "Main".green().bold());
-            let _ = crawler::read_urls_from_file(download_pdfs, download_imgs, scan_subfolders);
-        }
-        _ => {
-            println!("[{}] URL: {}", "Main".green().bold(), url.red());
+    if let Some(index) = args.iter().position(|s| s == "--url" || s == "-u") {
+        logln!("URL PASSED IN");
+
+        if let Some(url) = args.get(index + 1) {
+            logln!("Url is: {}", url);
             let _ = crawler::get_table(
                 url.as_str(),
                 "Download/",
@@ -138,7 +157,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 scan_subfolders,
             )
             .await;
+        } else {
+            logln!("ERROR: url not passed in read --help");
         }
+    } else {
+        logln!("Enter the url: ");
+
+        let mut url: String = String::new();
+
+        io::stdin().read_line(&mut url).expect("failed to readline");
+        let _ = crawler::get_table(
+            url.as_str(),
+            "Download/",
+            download_pdfs,
+            download_imgs,
+            scan_subfolders,
+        )
+        .await;
     }
 
     println!(
