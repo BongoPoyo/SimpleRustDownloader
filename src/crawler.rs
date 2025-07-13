@@ -129,7 +129,11 @@ pub async fn get_images(
     }
 
     let url = url.as_str();
-    println!("{} GETTING IMAGEES", "[Crawler]".bold().red());
+    unsafe {
+        if DISPLAY_DEBUG_INFO {
+            println!("{} GETTING IMAGEES", "[Crawler]".bold().red())
+        }
+    };
 
     let href_attr = href.value().attr("href").unwrap();
     // get all images from row
@@ -150,36 +154,42 @@ pub async fn get_images(
                 file_path.to_string() + (url.strip_prefix("https://").unwrap_or(url));
             let folder_to_download = folder.replace(file_name, "");
             // logln!("url:{} href_attr:{} href_link:{} file_name:{} folder:{} path:{}", url.bright_green(), href_attr.bright_green(), href_link.bright_green(), file_name.bright_green(), folder.bright_green(), file_path.bright_green());
-            println!(
-                "{} Link: {}",
-                "[Crawler]".bold().red(),
-                href_link.bright_green().bold()
-            );
+            unsafe {
+                if DISPLAY_DEBUG_INFO {
+                    println!(
+                        "{} Link: {}",
+                        "[Crawler]".bold().red(),
+                        href_link.bright_green().bold()
+                    )
+                }
+            };
 
             let href_attr = href.value().attr("href").unwrap();
             // else was here
             if alt == is_directory {
                 if scan_subfolders == 'y' || scan_subfolders == 'Y' {
                     unsafe {
-                        println!("{} Creating DIR", "[Crawler]".bold().red());
-
-                        // OLD CODE NEEDED IT, NOW THE NEW ONE DOESNT
-                        //
-                        //fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
-                        //    .unwrap_or_else(|why| {
-                        //        println!("{} ! {:?}", "[Crawler]".bold().red(), why);
-                        //    });
-
-                        // Bcz it can get infinitelty long so we use box::pin
-                        Box::pin(get_table(
-                            (url.to_string() + href_attr).as_str(),
-                            "Download/",
-                            download_pdfs,
-                            download_imgs,
-                            scan_subfolders,
-                        ))
-                        .await?; // Call get_table function with new url
+                        if DISPLAY_DEBUG_INFO {
+                            logln!("GOING TO URL: {}", (url.to_string() + href_attr).as_str());
+                        }
                     }
+                    // OLD CODE NEEDED IT, NOW THE NEW ONE DOESNT
+                    // println!("{} Creating DIR", "[Crawler]".bold().red());
+
+                    //fs::create_dir_all(CURRENT_DIRECTORY.to_string() + href_attr)
+                    //    .unwrap_or_else(|why| {
+                    //        println!("{} ! {:?}", "[Crawler]".bold().red(), why);
+                    //    });
+
+                    // Bcz it can get infinitelty long so we use box::pin
+                    Box::pin(get_table(
+                        (url.to_string() + href_attr).as_str(),
+                        "Download/",
+                        download_pdfs,
+                        download_imgs,
+                        scan_subfolders,
+                    ))
+                    .await?; // Call get_table function with new url
                 }
             } else if alt == is_image {
                 if download_imgs == 'y' || download_imgs == 'Y' {
@@ -247,80 +257,63 @@ pub async fn download_file_from_url_with_folder(
             }
 
             if OVERRIDE_EXISTING_FILES {
-                logln!("{} ovverinding file", path);
+                logln!("ovverinding file: {}", path);
                 // SEND REQUEST TO GET THE FILE
-                let client = Client::new();
-                let response = client.get(url).send().await?;
-                let bytes = response.bytes().await?;
-
-                // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
-                //
-
-                let mb = bytes.len() / (1024 * 1024);
-
-                if DISPLAY_DEBUG_INFO {
-                    println!(
-                        "{} {} {} | {} {} | {} {} MB | Path {}",
-                        "[Crawler]".bold().red(),
-                        //  Headings in bold     variables with colors
-                        "File Type:".red().underline(),
-                        file_type.bold().bright_purple(),
-                        "File Name:".green().underline(),
-                        file_name.bold().bright_yellow(),
-                        "File Size:".blue().underline(),
-                        mb.to_string().bold().bright_cyan(),
-                        path.magenta()
-                    );
-                }
-                println!(
-                    "{} {} | {}",
-                    "[Crawler]".bold().red(),
-                    "Downloading at".underline().bold(),
-                    path
-                );
-
-                let mut file = File::create(file_path)?;
-                file.write_all(&bytes)?;
+                download_file(file_name, file_type, &path, file_path, url).await?
             }
         } else {
-            // SEND REQUEST TO GET THE FILE
-            let client = Client::new();
-            let response = client.get(url).send().await?;
-            let bytes = response.bytes().await?;
-
-            // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
-            //
-
-            let mb = bytes.len() / (1024 * 1024);
-
-            if DISPLAY_DEBUG_INFO {
-                println!(
-                    "{} {} {} | {} {} | {} {} MB | Path {}",
-                    "[Crawler]".bold().red(),
-                    //  Headings in bold     variables with colors
-                    "File Type:".red().underline(),
-                    file_type.bold().bright_purple(),
-                    "File Name:".green().underline(),
-                    file_name.bold().bright_yellow(),
-                    "File Size:".blue().underline(),
-                    mb.to_string().bold().bright_cyan(),
-                    path.magenta()
-                );
-            }
-            println!(
-                "{} {} | {}",
-                "[Crawler]".bold().red(),
-                "Downloading at".underline().bold(),
-                path
-            );
-
-            let mut file = File::create(file_path)?;
-            file.write_all(&bytes)?;
+            logln!("downloading file at: {}", path);
+            download_file(file_name, file_type, &path, file_path, url).await?;
         }
     }
     Ok(())
 }
 
+async fn download_file(
+    file_name: &str,
+    file_type: &str,
+    path: &String,
+    file_path: &Path,
+    url: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let response = client.get(url).send().await?;
+    let bytes = response.bytes().await?;
+
+    // https://dl.chughtailibrary.com/files/repository/book_quest/history_geography/2/pdf_images/
+    //
+
+    let mb = bytes.len() / (1024 * 1024);
+
+    unsafe {
+        if DISPLAY_DEBUG_INFO {
+            println!(
+                "{} {} {} | {} {} | {} {} MB | Path {}",
+                "[Crawler]".bold().red(),
+                //  Headings in bold     variables with colors
+                "File Type:".red().underline(),
+                file_type.bold().bright_purple(),
+                "File Name:".green().underline(),
+                file_name.bold().bright_yellow(),
+                "File Size:".blue().underline(),
+                mb.to_string().bold().bright_cyan(),
+                path.magenta()
+            );
+        }
+        println!(
+            "{} {} | {}",
+            "[Crawler]".bold().red(),
+            "Downloading at".underline().bold(),
+            path
+        );
+    }
+    let mut file = File::create(file_path)?;
+    file.write_all(&bytes)?;
+
+    Ok(())
+}
+
+// DEPRECATED:
 pub async fn read_urls_from_file(
     download_pdfs: char,
     download_imgs: char,
