@@ -7,14 +7,14 @@
 
 use crate::crawler;
 use crate::pdf_maker;
+use crate::OVERRIDE_EXISTING_FILES;
 use iced::widget::{button, checkbox, column, row, text, text_input};
 use iced::Task;
 use iced::Theme;
 use iced::{Alignment, Element};
+use notify_rust::Notification;
 use std::thread::{self};
 use tokio::runtime::Runtime;
-
-
 macro_rules! logln {
     ($($arg:tt)*) => {
         println!(
@@ -44,7 +44,7 @@ enum Message {
     DownloadPressed,
     DownloadFinished(String),
     ConvertToPdfPressed,
-    CancelDownload,
+    OverrideToggle(bool),
 }
 
 impl Default for State {
@@ -102,16 +102,39 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             })
             .join()
             .unwrap();
-
+            match Notification::new()
+                .summary("Simple Rust Downloader")
+                .body("PDF Compressed")
+                .show()
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    logln!("Error sending notification: {}", e);
+                }
+            }
             println!("{} PDF COMPRESSED", "[AppIced]".blue().bold());
             Task::none()
         }
         Message::DownloadFinished(_string) => {
             state.is_downloading = false;
 
+            match Notification::new()
+                .summary("Simple Rust Downloader")
+                .body("Downloadig finished")
+                .show()
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    logln!("Error sending notification: {}", e);
+                }
+            }
+
             Task::none()
         }
-        Message::CancelDownload => {
+        Message::OverrideToggle(bool) => {
+            unsafe {
+                OVERRIDE_EXISTING_FILES = bool;
+            }
             //if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
             //    handle.join().unwrap();
             //} else {
@@ -141,7 +164,11 @@ fn view(state: &State) -> Element<Message> {
         row![
             checkbox("Download PDF", state.download_pdfs).on_toggle(Message::PdfToggle),
             checkbox("Download Images", state.download_imgs).on_toggle(Message::ImgToggle),
-            checkbox("Scan Subfolders", state.scan_subfolders).on_toggle(Message::SubfolderToggle)
+            checkbox("Scan Subfolders", state.scan_subfolders).on_toggle(Message::SubfolderToggle),
+            unsafe {
+                checkbox("Override existing files", OVERRIDE_EXISTING_FILES)
+                    .on_toggle(Message::OverrideToggle)
+            }
         ]
         .spacing(20),
         row![download_button, convert_pdf_button,].spacing(30)
