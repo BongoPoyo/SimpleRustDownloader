@@ -252,7 +252,7 @@ pub async fn download_file_from_url_with_folder(
         let path = input_path.to_string() + file_name;
         let file_path = Path::new(&path); // added &
 
-        LAST_FILE_PATH = Some(path.clone());
+        LAST_FILE_PATH = Some(input_path.to_string());
 
         if file_path.exists() {
             if DISPLAY_DEBUG_INFO {

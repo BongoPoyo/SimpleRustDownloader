@@ -1,9 +1,9 @@
+use crate::crawler;
 use colored::Colorize;
 use jpeg_to_pdf::JpegToPdf;
 use std::fs::{self, DirEntry, File};
 use std::io;
 use std::path::Path; //, PathBuf};
-
 macro_rules! logln {
     ($($arg:tt)*) => {
         println!(
@@ -54,6 +54,16 @@ fn scan_folder(path: &Path) -> io::Result<()> {
             .parent()
             .expect("[PdfMaker] ERROR GETTING FILE PARENT")
             .join("out.pdf");
+
+        unsafe {
+            let string_path = path
+                .parent()
+                .expect("Error getting parent folder")
+                .to_string_lossy()
+                .into_owned();
+            logln!("Last file path is {}", string_path);
+            crawler::LAST_FILE_PATH = Some(string_path);
+        }
 
         let out_file = File::create(&out_file_path).expect("[PdfMaker] error creating file");
         logln!(

@@ -13,6 +13,8 @@ use iced::Task;
 use iced::Theme;
 use iced::{Alignment, Element};
 use notify_rust::Notification;
+use opener;
+use std::path::Path;
 use std::thread::{self};
 use tokio::runtime::Runtime;
 macro_rules! logln {
@@ -45,6 +47,7 @@ enum Message {
     DownloadFinished(String),
     ConvertToPdfPressed,
     OverrideToggle(bool),
+    OpenFileExplorerPressed,
 }
 
 impl Default for State {
@@ -149,11 +152,26 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             //}
             Task::none()
         }
+        Message::OpenFileExplorerPressed => {
+            logln!("Opening file");
+
+            unsafe {
+                #[allow(static_mut_refs)]
+                if let Some(s) = &crawler::LAST_FILE_PATH {
+                    let path = Path::new(s.as_str());
+                    opener::open(path).expect("Error opening path");
+                }
+            }
+            Task::none()
+        }
     }
 }
 
 fn view(state: &State) -> Element<Message> {
     let mut download_button = button("Download").on_press(Message::DownloadPressed);
+    let open_file_explorer_button = button("📂 Open Downloads")
+        //.style(CustomButtonStyle)
+        .on_press(Message::OpenFileExplorerPressed);
     // let mut cancel_button = button("Cancel Download").on_press(Message::CancelDownload);
     let mut convert_pdf_button =
         button("Convert Img to PDF").on_press(Message::ConvertToPdfPressed);
@@ -178,7 +196,12 @@ fn view(state: &State) -> Element<Message> {
             }
         ]
         .spacing(20),
-        row![download_button, convert_pdf_button,].spacing(30)
+        row![
+            download_button,
+            convert_pdf_button,
+            open_file_explorer_button,
+        ]
+        .spacing(30)
     ]
     .spacing(15)
     .padding(20)

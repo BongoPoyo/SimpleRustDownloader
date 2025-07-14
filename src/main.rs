@@ -5,6 +5,7 @@ static mut OVERRIDE_EXISTING_FILES: bool = false;
 //static mut CURRENT_DIRECTORY: &str = "Download/";
 //mod app; // deprecated
 mod app_iced;
+mod app_iced_style;
 mod crawler;
 mod pdf_maker;
 // std(s)
