@@ -1,6 +1,7 @@
 // <-----------> Importing standard libraries <-----------
 #![allow(static_mut_refs)]
 static mut CURRENT_DIRECTORY: &str = "Download/";
+pub static mut LAST_FILE_PATH: Option<String> = None;
 // std(static)
 //use std::env;
 use std::fs;
@@ -250,6 +251,8 @@ pub async fn download_file_from_url_with_folder(
 
         let path = input_path.to_string() + file_name;
         let file_path = Path::new(&path); // added &
+
+        LAST_FILE_PATH = Some(path.clone());
 
         if file_path.exists() {
             if DISPLAY_DEBUG_INFO {

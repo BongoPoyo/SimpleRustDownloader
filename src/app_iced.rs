@@ -129,6 +129,13 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
                 }
             }
 
+            unsafe {
+                #[allow(static_mut_refs)]
+                if let Some(value) = &crawler::LAST_FILE_PATH {
+                    logln!("Last file was {}", value);
+                }
+            }
+
             Task::none()
         }
         Message::OverrideToggle(bool) => {
