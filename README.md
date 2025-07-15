@@ -15,14 +15,16 @@ or execute the following commands:
 
 - Windows
 ```
-
-wget https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/win-x86_64.zip
+# Windows (PowerShell)
+Invoke-WebRequest -Uri "https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/win-x86_64.zip" -OutFile "app.zip"
+Expand-Archive app.zip
+.\SimpleRustDownloader-GUI.exe
 ```
 - Linux
 ```
-
 wget https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/linux-x86_64.tar.gz
 tar -xvf linux-x86_64.tar.gz
+chmod +x SimpleRustDownloader-GUI 
 ```
 
 
