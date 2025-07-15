@@ -43,9 +43,7 @@ pub async fn get_table(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    println!("{} GETTING TABLE", "[Crawler]".bold().red());
-    println!("{} URL : {}", "[Crawler]".bold().red(), url.bold().blink()); // Print the URL
-
+    logln!("Getting table url: {}", url);
     let response = ureq::get(url).call()?; // send a request to the url
                                            // let html: Html = Html::parse_document(&response.into_string()?); // parse the html from the response
     let html = Box::leak(Box::new(Html::parse_document(&response.into_string()?)));
@@ -71,7 +69,11 @@ pub async fn extract_table(
     scan_subfolders: char,
     html: &'static Html,
 ) {
-    println!("{} EXTRACTING TABLE", "[Crawler]".bold().red());
+    unsafe {
+        if DISPLAY_DEBUG_INFO {
+            logln!("EXTRACTING TABLE.....");
+        }
+    }
 
     let table_selector = Selector::parse("table").unwrap(); // make table selector
     for table in html.select(&table_selector) {
@@ -130,7 +132,7 @@ pub async fn get_images(
     let url = url.as_str();
     unsafe {
         if DISPLAY_DEBUG_INFO {
-            println!("{} GETTING IMAGEES", "[Crawler]".bold().red())
+            logln!("Getting Images and PDFs....");
         }
     };
 
@@ -195,14 +197,22 @@ pub async fn get_images(
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
                 } else {
-                    println!("{} Found img but, didnt download", "[Crawler]".bold().red());
+                    unsafe {
+                        if DISPLAY_DEBUG_INFO {
+                            logln!("Found Image, didnt download {}", href_link);
+                        }
+                    };
                 }
             } else if alt == is_pdf {
                 if download_pdfs == 'y' || download_pdfs == 'Y' {
                     download_file_from_url_with_folder(&href_link.as_str(), &folder_to_download)
                         .await?;
                 } else {
-                    println!("{} Found pdf but, didnt download", "[Crawler]".bold().red());
+                    unsafe {
+                        if DISPLAY_DEBUG_INFO {
+                            logln!("Found PDF, didnt download {}", href_link);
+                        }
+                    };
                 }
             } else {
                 println!(

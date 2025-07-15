@@ -8,6 +8,8 @@
 use crate::crawler;
 use crate::pdf_maker;
 use crate::OVERRIDE_EXISTING_FILES;
+use colored::Colorize;
+use dark_light::Mode;
 use iced::widget::{button, checkbox, column, row, text, text_input};
 use iced::Task;
 use iced::Theme;
@@ -17,6 +19,7 @@ use opener;
 use std::path::Path;
 use std::thread::{self};
 use tokio::runtime::Runtime;
+
 macro_rules! logln {
     ($($arg:tt)*) => {
         println!(
@@ -26,7 +29,6 @@ macro_rules! logln {
         );
     };
 }
-use colored::Colorize;
 #[derive(Debug, Clone)]
 struct State {
     url: String,
@@ -121,17 +123,6 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
         Message::DownloadFinished(_string) => {
             state.is_downloading = false;
 
-            match Notification::new()
-                .summary("Simple Rust Downloader")
-                .body("Downloadig finished")
-                .show()
-            {
-                Ok(_) => {}
-                Err(e) => {
-                    logln!("Error sending notification: {}", e);
-                }
-            }
-
             unsafe {
                 #[allow(static_mut_refs)]
                 if let Some(value) = &crawler::LAST_FILE_PATH {
@@ -139,17 +130,24 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
                 }
             }
 
+            match Notification::new()
+                .summary("Simple Rust Downloader")
+                .body("Downloadig finished")
+                .action("convert", "Convert to PDF")
+                .show()
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    logln!("error showing notification: {}", e);
+                }
+            }
             Task::none()
         }
         Message::OverrideToggle(bool) => {
             unsafe {
                 OVERRIDE_EXISTING_FILES = bool;
             }
-            //if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
-            //    handle.join().unwrap();
-            //} else {
-            //    println!("{} No thread to join.", "[AppIced]".blue().bold());
-            //}
+
             Task::none()
         }
         Message::OpenFileExplorerPressed => {
@@ -169,9 +167,8 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 
 fn view(state: &State) -> Element<Message> {
     let mut download_button = button("Download").on_press(Message::DownloadPressed);
-    let open_file_explorer_button = button("📂 Open Downloads")
-        //.style(CustomButtonStyle)
-        .on_press(Message::OpenFileExplorerPressed);
+    let open_file_explorer_button =
+        button("📂 Open Downloads Folder").on_press(Message::OpenFileExplorerPressed);
     // let mut cancel_button = button("Cancel Download").on_press(Message::CancelDownload);
     let mut convert_pdf_button =
         button("Convert Img to PDF").on_press(Message::ConvertToPdfPressed);
@@ -210,7 +207,11 @@ fn view(state: &State) -> Element<Message> {
 }
 
 fn theme(_state: &State) -> Theme {
-    Theme::TokyoNight
+    match dark_light::detect() {
+        Ok(Mode::Dark) => Theme::CatppuccinMocha,
+        Ok(Mode::Light) => Theme::Light,
+        _ => Theme::CatppuccinMocha,
+    }
 }
 
 async fn download(
@@ -219,32 +220,6 @@ async fn download(
     download_imgs: char,
     scan_subfolders: char,
 ) -> String {
-    //let (ah, ar) = AbortHandle::new_pair();
-
-    //let abortable = Abortable::new(
-    //    crawler::get_table(
-    //        &url.as_str(),
-    //        "Download/",
-    //        download_pdfs,
-    //        download_imgs,
-    //        scan_subfolders,
-    //    ),
-    //    ar,
-    //);
-
-    //let ah_arc = Arc::new(Mutex::new(Some(ah.clone())));
-
-    //std::thread::spawn(move || {
-    //    let rt = Runtime::new().unwrap();
-    //    let result = rt.block_on(async move {
-    //        match abortable.await {
-    //            Ok(_) => println!("[AppIced] download finished"),
-    //            Err(_) => println!("[AppIced] Download CANCELLATION"),
-    //        }
-    //    });
-    //});
-    //
-
     // WORKING CODE BUT DOESNT SUPPORT CANCELLATION
     thread::spawn(move || {
         let rt = Runtime::new().unwrap();
@@ -264,15 +239,5 @@ async fn download(
     .join()
     .unwrap();
 
-    //
-    // DOWNLOAD_THREAD_HANDLE.set(handle).unwrap();
-    // //*DOWNLOAD_THREAD.lock().unwrap() = Some(handle);
-    //
-    // if let Some(handle) = DOWNLOAD_THREAD.lock().unwrap().take() {
-    //     println!("[AppIced] Waiting for thread to join.");
-    //     handle.join().unwrap();
-    // } else {
-    //     println!("[AppIced] No thread to join.");
-    // }
     String::from("Hehe")
 }
