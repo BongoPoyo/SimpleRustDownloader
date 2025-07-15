@@ -11,6 +11,8 @@ https://dl.chughtailibrary.com/files/repository/book_quest/natura_science/1007/
 
 # Installation
 Go to the releases tag to get compiled binaries.
+or execute the following commands:
+
 - Windows
 ```
 
@@ -19,7 +21,8 @@ wget https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/
 - Linux
 ```
 
-wget https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/linux-x86_64.zip
+wget https://github.com/BongoPoyo/SimpleRustDownloader/releases/latest/download/linux-x86_64.tar.gz
+tar -xvf linux-x86_64.tar.gz
 ```
 
 
