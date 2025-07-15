@@ -1,6 +1,4 @@
 // <-----------> Importing standard libraries <-----------
-#![allow(static_mut_refs)]
-static mut CURRENT_DIRECTORY: &str = "Download/";
 pub static mut LAST_FILE_PATH: Option<String> = None;
 // std(static)
 //use std::env;
@@ -8,7 +6,7 @@ use std::fs;
 use std::fs::File;
 //use std::io;
 use std::io::prelude::*;
-use std::io::BufReader;
+// use std::io::BufReader;
 use std::path::Path;
 //use std::thread;
 // use(s)
@@ -219,17 +217,17 @@ pub async fn get_images(
     Ok(None)
 }
 
-pub fn read_lines(path: &str) -> std::io::Result<Vec<String>> {
-    // Open file if u can only, other wise do floss dance WHAAATTTTTTTTTTTT :{}
-    let file = File::open(path)?;
-    // Read the files and convert it into Buffer
-    let reader = BufReader::new(file);
-    // If OK then
-    Ok(
-        // Return the lines of the file
-        reader.lines().filter_map(Result::ok).collect(),
-    )
-}
+// pub fn read_lines(path: &str) -> std::io::Result<Vec<String>> {
+//     // Open file if u can only, other wise do floss dance WHAAATTTTTTTTTTTT :{}
+//     let file = File::open(path)?;
+//     // Read the files and convert it into Buffer
+//     let reader = BufReader::new(file);
+//     // If OK then
+//     Ok(
+//         // Return the lines of the file
+//         reader.lines().filter_map(Result::ok).collect(),
+//     )
+// }
 
 pub fn create_directory_if_it_does_not_exist(directory_path: &str) {
     if !fs::metadata(directory_path).is_ok() {
@@ -317,29 +315,29 @@ async fn download_file(
 }
 
 // DEPRECATED:
-pub async fn read_urls_from_file(
-    download_pdfs: char,
-    download_imgs: char,
-    scan_subfolders: char,
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!(
-        "{} {}",
-        "[Crawler]".bold().red(),
-        "******* Reading URLS *******".bold().underline().green()
-    );
-    // Get all the urls from the file :D and save it into a vector of type string
-    let paths: Vec<String> = read_lines("urls.txt")?; // ? does the thing only if there is no error
-
-    for path in paths {
-        let _ = get_table(
-            path.as_str(),
-            "Download/",
-            download_pdfs,
-            download_imgs,
-            scan_subfolders,
-        )
-        .await;
-    }
-    println!("{} READ ALL URLS", "[Crawler]".bold().red());
-    return Ok(());
-}
+// pub async fn read_urls_from_file(
+//     download_pdfs: char,
+//     download_imgs: char,
+//     scan_subfolders: char,
+// ) -> Result<(), Box<dyn std::error::Error>> {
+//     println!(
+//         "{} {}",
+//         "[Crawler]".bold().red(),
+//         "******* Reading URLS *******".bold().underline().green()
+//     );
+//     // Get all the urls from the file :D and save it into a vector of type string
+//     let paths: Vec<String> = read_lines("urls.txt")?; // ? does the thing only if there is no error
+//
+//     for path in paths {
+//         let _ = get_table(
+//             path.as_str(),
+//             "Download/",
+//             download_pdfs,
+//             download_imgs,
+//             scan_subfolders,
+//         )
+//         .await;
+//     }
+//     println!("{} READ ALL URLS", "[Crawler]".bold().red());
+//     return Ok(());
+// }
