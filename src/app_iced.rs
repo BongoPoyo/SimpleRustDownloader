@@ -5,8 +5,8 @@
 
 //static DOWNLOAD_THREAD: Lazy<Mutex<Option<JoinHandle<()>>>> = Lazy::new(|| Mutex::new(None));
 
-use crate::crawler;
 use crate::pdf_maker;
+use crate::threaded_crawler;
 use crate::OVERRIDE_EXISTING_FILES;
 use colored::Colorize;
 use dark_light::Mode;
@@ -125,7 +125,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 
             unsafe {
                 #[allow(static_mut_refs)]
-                if let Some(value) = &crawler::LAST_FILE_PATH {
+                if let Some(value) = &threaded_crawler::LAST_FILE_PATH {
                     logln!("Last file was {}", value);
                 }
             }
@@ -155,7 +155,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 
             unsafe {
                 #[allow(static_mut_refs)]
-                if let Some(s) = &crawler::LAST_FILE_PATH {
+                if let Some(s) = &threaded_crawler::LAST_FILE_PATH {
                     let path = Path::new(s.as_str());
                     opener::open(path).expect("Error opening path");
                 }
@@ -224,7 +224,7 @@ async fn download(
     thread::spawn(move || {
         let rt = Runtime::new().unwrap();
         rt.block_on(async move {
-            let _ = crawler::get_table(
+            let _ = threaded_crawler::download_threaded(
                 &url.as_str(),
                 "Download/",
                 download_pdfs,

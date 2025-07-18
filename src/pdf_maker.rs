@@ -1,4 +1,4 @@
-use crate::crawler;
+use crate::threaded_crawler;
 use colored::Colorize;
 use jpeg_to_pdf::JpegToPdf;
 use std::fs::{self, DirEntry, File};
@@ -62,7 +62,7 @@ fn scan_folder(path: &Path) -> io::Result<()> {
                 .to_string_lossy()
                 .into_owned();
             logln!("Last file path is {}", string_path);
-            crawler::LAST_FILE_PATH = Some(string_path);
+            threaded_crawler::LAST_FILE_PATH = Some(string_path);
         }
 
         let out_file = File::create(&out_file_path).expect("[PdfMaker] error creating file");

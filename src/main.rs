@@ -5,8 +5,9 @@ static mut OVERRIDE_EXISTING_FILES: bool = false;
 //static mut CURRENT_DIRECTORY: &str = "Download/";
 //mod app; // deprecated
 mod app_iced;
-mod crawler;
+//mod crawler;
 mod pdf_maker;
+mod threaded_crawler;
 // std(s)
 use std::env;
 //use std::fs;
@@ -149,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if let Some(url) = args.get(index + 1) {
             logln!("Url is: {}", url);
-            let _ = crawler::get_table(
+            let _ = threaded_crawler::download_threaded(
                 url.as_str(),
                 "Download/",
                 download_pdfs,
@@ -166,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut url: String = String::new();
 
         io::stdin().read_line(&mut url).expect("failed to readline");
-        let _ = crawler::get_table(
+        let _ = threaded_crawler::download_threaded(
             url.as_str(),
             "Download/",
             download_pdfs,
