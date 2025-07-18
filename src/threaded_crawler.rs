@@ -364,10 +364,10 @@ async fn download_file(
                 path.magenta()
             );
         }
-        logln!("{} | {}", "Downloading at".underline().bold(), path);
     }
     let mut file = File::create(file_path)?;
     file.write_all(&bytes)?;
+    logln!("File downloaded: {} | MB: {}", file_name, mb);
 
     Ok(())
 }
