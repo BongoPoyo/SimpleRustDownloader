@@ -72,6 +72,7 @@ pub async fn download_threaded(
         //DOWNLOADABLE_FILES.par_iter().for_each(|downloadable_file| {
         //    download_file_from_url_with_folder(downloadable_file).await;
         //});
+        #[allow(static_mut_refs)]
         while let Some(file) = DOWNLOADABLE_FILES.pop() {
             tasks.push(async move {
                 if let Err(e) = download_file_from_url_with_folder(&file).await {
@@ -86,7 +87,7 @@ pub async fn download_threaded(
     Ok(None) // return None
 }
 
-pub async fn get_table(
+async fn get_table(
     url: &str,
     file_path: &str,
     download_pdfs: char,
@@ -111,7 +112,7 @@ pub async fn get_table(
     Ok(None) // return None
 }
 
-pub async fn extract_table(
+async fn extract_table(
     url: &str,
     file_path: &str,
     download_pdfs: char,
@@ -162,7 +163,7 @@ pub async fn extract_table(
       //
 }
 
-pub async fn get_images(
+async fn get_images(
     img: ElementRef<'static>,
     href: ElementRef<'static>,
     url: &str,
@@ -249,6 +250,7 @@ pub async fn get_images(
                         input_path: folder_to_download,
                     };
                     unsafe {
+                        #[allow(static_mut_refs)]
                         DOWNLOADABLE_FILES.push(downloadable_file);
                     }
                     //download_file_from_url_with_folder(downloadable_file).await?;
@@ -266,6 +268,7 @@ pub async fn get_images(
                         input_path: folder_to_download,
                     };
                     unsafe {
+                        #[allow(static_mut_refs)]
                         DOWNLOADABLE_FILES.push(downloadable_file);
                     }
                     //download_file_from_url_with_folder(downloadable_file).await?;
@@ -289,7 +292,7 @@ pub async fn get_images(
     Ok(None)
 }
 
-pub fn create_directory_if_it_does_not_exist(directory_path: &str) {
+fn create_directory_if_it_does_not_exist(directory_path: &str) {
     if !fs::metadata(directory_path).is_ok() {
         fs::create_dir_all(directory_path).unwrap_or_else(|why| {
             logln!("! {:?}", why);
@@ -297,7 +300,7 @@ pub fn create_directory_if_it_does_not_exist(directory_path: &str) {
     }
 }
 
-pub async fn download_file_from_url_with_folder(
+async fn download_file_from_url_with_folder(
     downloadable_file: &DownloadableFile,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let url: &str = &downloadable_file.url;
