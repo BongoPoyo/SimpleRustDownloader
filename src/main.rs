@@ -217,7 +217,7 @@ fn enable_ansi_support() {
     // crossterm::terminal::enable_virtual_terminal_processing(std::io::stdout()).unwrap();
 }
 
-#[cfg(not(windows))]
+#[cfg(unix)]
 fn enable_ansi_support() {
-    println!("[{}] Detected UNIX BASED OS....", "Main".green().bold());
+    logln!("Detected UNIX BASED OS....");
 }
