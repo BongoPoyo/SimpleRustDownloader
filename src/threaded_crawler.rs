@@ -3,6 +3,8 @@ pub static mut LAST_FILE_PATH: Option<String> = None;
 
 #[allow(static_mut_refs)]
 pub static mut DOWNLOADABLE_FILES: Vec<DownloadableFile> = vec![];
+
+pub static mut STOP_SCANNING_FILES: bool = false;
 // std(static)
 //use std::env;
 use std::fs;
@@ -84,6 +86,10 @@ pub async fn download_threaded(
     // Await all download tasks
     while tasks.next().await.is_some() {}
     logln!("Downloads finished...");
+    unsafe {
+        STOP_SCANNING_FILES = true;
+    }
+
     Ok(None) // return None
 }
 
@@ -172,6 +178,12 @@ async fn get_images(
     download_imgs: char,
     scan_subfolders: char,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    unsafe {
+        if STOP_SCANNING_FILES {
+            logln!("Stopping scanning");
+            return Ok(None);
+        }
+    }
     // if url doenst end with / add a /
     // causes issues if not done like this
     let mut url = url.to_string();
@@ -280,12 +292,7 @@ async fn get_images(
                     };
                 }
             } else {
-                println!(
-                    "{} {}{}",
-                    "[Crawler]".bold().red(),
-                    url.bright_yellow(),
-                    href_attr.bright_yellow()
-                );
+                logln!("{}{}", url.bright_yellow(), href_attr.bright_yellow());
             }
         }
     }

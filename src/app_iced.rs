@@ -7,6 +7,7 @@
 
 use crate::pdf_maker;
 use crate::threaded_crawler;
+use crate::threaded_crawler::STOP_SCANNING_FILES;
 use crate::OVERRIDE_EXISTING_FILES;
 use colored::Colorize;
 use dark_light::Mode;
@@ -50,6 +51,7 @@ enum Message {
     ConvertToPdfPressed,
     OverrideToggle(bool),
     OpenFileExplorerPressed,
+    StopScanning,
 }
 
 impl Default for State {
@@ -90,6 +92,9 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
         }
         Message::DownloadPressed => {
             state.is_downloading = true;
+            unsafe {
+                threaded_crawler::STOP_SCANNING_FILES = false;
+            }
             let url = state.url.clone();
             let download_pdfs = if state.download_pdfs { 'y' } else { 'n' };
             let download_imgs = if state.download_imgs { 'y' } else { 'n' };
@@ -162,6 +167,13 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             }
             Task::none()
         }
+        Message::StopScanning => {
+            logln!("Stopping...");
+            unsafe {
+                threaded_crawler::STOP_SCANNING_FILES = true;
+            }
+            Task::none()
+        }
     }
 }
 
@@ -174,7 +186,14 @@ fn view(state: &State) -> Element<Message> {
         button("Convert Img to PDF").on_press(Message::ConvertToPdfPressed);
 
     if state.is_downloading {
-        download_button = button("Downloading");
+        unsafe {
+            if STOP_SCANNING_FILES {
+                download_button = button("Stopped Scanning, Waiting for downloading to finish...");
+            } else {
+                download_button = button("Stop Scanning?").on_press(Message::StopScanning);
+            }
+        }
+
         convert_pdf_button = button("Wait for downloading to complete...");
     }
 

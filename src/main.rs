@@ -55,16 +55,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut args: Vec<String> = env::args().collect();
 
-    // COMMAND LINE ARGS
-    if args.len() <= 1 {
-        println!("[{}] NO COMMANDS PASSED IN", "Main".green().bold());
-        args.push("--gui".to_string());
-        args.push("".to_string());
-    }
-
     if args.contains(&"--cli".to_string()) || args.contains(&"-c".to_string()) {
         logln!("Running cli");
-    } else if args.contains(&"--gui".to_string()) || args.contains(&"-g".to_string()) {
+    } else {
+        args.push("--gui".to_string());
+    }
+    if args.contains(&"--gui".to_string()) || args.contains(&"-g".to_string()) {
         logln!("Running gui");
         let result: iced::Result = app_iced::create_application();
         match result {
